@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { UserPlus } from "lucide-react";
-import "./App.css"
+import "../App.css"
+import { Link, useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,6 +16,8 @@ export default function RegisterPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -26,13 +29,54 @@ export default function RegisterPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // simulasi register
-    setTimeout(() => {
-      console.log("DATA REGISTER:", formData);
+    // Validasi semua field wajib diisi
+    if (!formData.email || !formData.password || !formData.name || 
+        !formData.id_number || !formData.phone || !formData.address || 
+        !formData.date_of_birth) {
+      setError('Semua field wajib diisi!');
       setLoading(false);
-      alert("Registrasi berhasil (simulasi)");
-    }, 1500);
+      return;
+    }
+
+    // Dummy registration (tanpa API)
+    setTimeout(() => {
+      // Ambil daftar user yang sudah terdaftar
+      const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+      
+      // Cek apakah email sudah terdaftar
+      const emailExists = existingUsers.find(user => user.email === formData.email);
+      if (emailExists) {
+        setError('Email sudah terdaftar!');
+        setLoading(false);
+        return;
+      }
+
+      // Buat user baru (tanpa password di storage untuk keamanan)
+      const newUser = {
+        id: Date.now(),
+        email: formData.email,
+        name: formData.name,
+        password: formData.password, // Simpan password untuk validasi login
+        role: 'pasien',
+        id_number: formData.id_number,
+        phone: formData.phone,
+        address: formData.address,
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
+        createdAt: new Date().toISOString()
+      };
+
+      // Simpan ke daftar user terdaftar
+      existingUsers.push(newUser);
+      localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+
+      // Alert dan arahkan ke login
+      alert("Registrasi berhasil! Silakan login dengan akun Anda.");
+      navigate('/');
+      setLoading(false);
+    }, 800);
   };
 
   return (
@@ -46,6 +90,12 @@ export default function RegisterPage() {
             Lengkapi data diri Anda untuk membuat akun
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -181,16 +231,16 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        {/* tanpa router */}
         <div className="mt-6 text-center">
           <p className="text-sm text-[#64748b]">
             Sudah punya akun?{" "}
-            <span className="text-[#f5470d] font-medium cursor-pointer hover:underline">
+            <Link to="/" className="text-[#f5470d] font-medium cursor-pointer hover:underline">
               Masuk
-            </span>
+            </Link>
           </p>
         </div>
       </div>
     </div>
   );
 }
+

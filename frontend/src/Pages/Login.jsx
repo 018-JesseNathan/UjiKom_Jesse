@@ -1,27 +1,66 @@
 import { useState } from "react";
-import './App.css'
+import '../App.css'
+import { Link, useNavigate } from "react-router-dom";
 import { LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
-    // simulasi login
-    setTimeout(() => {
-      console.log({ email, password });
+    // Validasi input
+    if (!email || !password) {
+      setError('Email dan password wajib diisi!');
       setLoading(false);
-      alert("Login berhasil (simulasi)");
-    }, 1500);
+      return;
+    }
+
+    // Dummy login dengan validasi
+    setTimeout(() => {
+      // Cek admin login
+      if (email === 'admin@hospital.com' && password === 'admin123') {
+        // Login sebagai admin
+        const adminUser = {
+          id: 1,
+          email: 'admin@hospital.com',
+          role: 'admin',
+          name: 'Administrator'
+        };
+        localStorage.setItem('currentUser', JSON.stringify(adminUser));
+        navigate('/adminDashboard');
+      } else {
+        // Validasi pasien terhadap daftar user terdaftar
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const user = registeredUsers.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+          // Login berhasil sebagai pasien
+          const pasienUser = {
+            id: user.id,
+            email: user.email,
+            role: 'pasien',
+            name: user.name
+          };
+          localStorage.setItem('currentUser', JSON.stringify(pasienUser));
+          navigate('/pasienDashboard');
+        } else {
+          // Login gagal
+          setError('Email atau password tidak sesuai!');
+        }
+      }
+      setLoading(false);
+    }, 800);
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left side - Login form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
           <div className="mb-8">
@@ -76,20 +115,26 @@ export default function LoginPage() {
                 </>
               )}
             </button>
-
           </form>
 
-          {/* Register text (tanpa router) */}
+          {error && (
+            <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           <div className="mt-6 text-center">
             <p className="text-sm text-[#64748b]">
               Belum punya akun?{" "}
-              <span className="text-[#f5470d] font-medium cursor-pointer hover:underline">
-                Daftar sebagai Pasien
-              </span>
+              <Link
+                to="/register"
+                className="text-[#f5470d] font-medium cursor-pointer hover:underline"
+              >
+                Daftar sebagai Pasien 
+              </Link>
             </p>
           </div>
 
-          {/* Admin Demo */}
           <div className="mt-8 p-4 bg-[#f8f9fa] rounded-sm border border-[#e2e8f0]">
             <p className="text-xs text-[#64748b] uppercase tracking-wider mb-2 font-medium">
               Admin Demo
@@ -104,7 +149,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right side - Image */}
       <div
         className="hidden lg:flex flex-1 bg-cover bg-center relative"
         style={{
@@ -125,3 +169,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

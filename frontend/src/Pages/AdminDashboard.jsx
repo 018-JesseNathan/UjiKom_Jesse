@@ -1,29 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogOut, Plus, Edit2, Trash2, RefreshCw, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
-  // DATA DUMMY (tanpa API)
+  const navigate = useNavigate();
+  // Polyclinics configuration - same as PatientDashboard
   const polyclinics = [
-    {
-      id: 1,
-      code: 'POL-001',
-      name: 'Poli Umum',
-      description: 'Pelayanan kesehatan umum',
-      schedule: 'Senin - Jumat, 08:00 - 16:00',
-      queues: [
-        { id: 1, queue_number: 'A001', patient_name: 'Budi', status: 'menunggu' },
-        { id: 2, queue_number: 'A002', patient_name: 'Siti', status: 'menunggu' }
-      ]
-    },
-    {
-      id: 2,
-      code: 'POL-002',
-      name: 'Poli Gigi',
-      description: 'Pelayanan kesehatan gigi',
-      schedule: 'Senin - Kamis, 09:00 - 14:00',
-      queues: []
-    }
+    { id: 1, code: 'POL-001', name: 'Poliklinik Umum', description: 'Pelayanan kesehatan umum', schedule: 'Senin - Jumat, 08:00 - 16:00', prefix: 'A', loket: 1 },
+    { id: 2, code: 'POL-002', name: 'Poliklinik Gigi', description: 'Pelayanan kesehatan gigi', schedule: 'Senin - Kamis, 09:00 - 14:00', prefix: 'B', loket: 2 },
+    { id: 3, code: 'POL-003', name: 'Poliklinik Anak', description: 'Pelayanan kesehatan bayi dan anak', schedule: 'Senin - Jumat, 08:00 - 14:00', prefix: 'C', loket: 3 },
+    { id: 4, code: 'POL-004', name: 'Poliklinik Mata', description: 'Pelayanan kesehatan mata', schedule: 'Senin - Jumat, 09:00 - 16:00', prefix: 'D', loket: 4 },
+    { id: 5, code: 'POL-005', name: 'Poliklinik Kandungan', description: 'Pelayanan kesehatan ibu hamil', schedule: 'Senin - Jumat, 08:00 - 15:00', prefix: 'E', loket: 5 }
   ];
+
+  // State for queues - loaded from localStorage (same data as PatientDashboard)
+  const [queues, setQueues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load queues from localStorage
+  const loadQueues = () => {
+    const savedQueues = localStorage.getItem('queues');
+    const parsedQueues = savedQueues ? JSON.parse(savedQueues) : [];
+    setQueues(parsedQueues);
+    setLoading(false);
+  };
+
+  // Load queues on component mount
+  useEffect(() => {
+    loadQueues();
+  }, []);
+
+  // Group queues by polyclinic_id
+  const getQueuesByPolyclinic = (polyclinicId) => {
+    return queues.filter(q => q.polyclinic_id === polyclinicId);
+  };
+
+  // Get queue counter for a poliklinik
+  const getQueueCount = (polyclinicId) => {
+    return getQueuesByPolyclinic(polyclinicId).length;
+  };
+
+  // Reset all queues
+  const handleResetAll = () => {
+    if (window.confirm('Apakah Anda yakin ingin mereset semua antrian? Tindakan ini tidak dapat dibatalkan.')) {
+      localStorage.removeItem('queues');
+      localStorage.removeItem('queueCounters');
+      setQueues([]);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa]">
@@ -32,9 +56,9 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-[#232230]">Dashboard Admin</h1>
-            <p className="text-sm text-[#64748b]">Mode Tampilan (Tanpa API)</p>
+            <p className="text-sm text-[#64748b]">Mode Tampilan - Sinkron dengan PatientDashboard</p>
           </div>
-          <button className="btn-secondary flex items-center gap-2">
+          <button onClick={() => navigate('/')} className="btn-secondary flex items-center gap-2">
             <LogOut size={18} />
             Keluar
           </button>
@@ -92,44 +116,49 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-[#232230]">Antrian Hari Ini</h2>
             <div className="flex gap-3">
-              <button className="btn-secondary flex items-center gap-2">
+              <button onClick={loadQueues} className="btn-secondary flex items-center gap-2">
                 <RefreshCw size={18} />
                 Refresh
               </button>
-              <button className="btn-primary bg-[#ef4444] flex items-center gap-2">
+              <button onClick={handleResetAll} className="btn-primary bg-[#ef4444] flex items-center gap-2">
                 <AlertCircle size={18} />
                 Reset Semua
               </button>
             </div>
           </div>
 
-          {polyclinics.map((poly) => (
-            <div key={poly.id} className="card mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="text-xl font-bold">{poly.name}</h3>
-                  <p className="text-sm text-[#64748b]">{poly.code}</p>
+          {loading ? (
+            <p className="text-center text-[#64748b] py-6">Memuat data...</p>
+          ) : (
+            polyclinics.map((poly) => (
+              <div key={poly.id} className="card mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold">{poly.name}</h3>
+                    <p className="text-sm text-[#64748b]">{poly.code}</p>
+                  </div>
+                  <span className="text-sm">Total: <b>{getQueueCount(poly.id)}</b> antrian</span>
                 </div>
-                <span className="text-sm">Total: <b>{poly.queues.length}</b> antrian</span>
-              </div>
 
-              {poly.queues.length === 0 ? (
-                <p className="text-center text-[#64748b] py-6">Belum ada antrian</p>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {poly.queues.map((q) => (
-                    <div key={q.id} className="queue-card p-4">
-                      <div className="text-3xl font-bold text-[#f5470d]">{q.queue_number}</div>
-                      <p className="font-medium">{q.patient_name}</p>
-                      <p className="text-xs uppercase text-[#64748b]">{q.status}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                {getQueuesByPolyclinic(poly.id).length === 0 ? (
+                  <p className="text-center text-[#64748b] py-6">Belum ada antrian</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {getQueuesByPolyclinic(poly.id).map((q) => (
+                      <div key={q.id} className="queue-card p-4">
+                        <div className="text-3xl font-bold text-[#f5470d]">{q.queue_number}</div>
+                        <p className="font-medium">{q.patient_name}</p>
+                        <p className="text-xs uppercase text-[#64748b]">{q.status}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </section>
       </main>
     </div>
   );
 }
+

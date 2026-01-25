@@ -67,3 +67,30 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #f5470d;
   box-shadow: 0 0 0 2px rgba(245, 71, 13, 0.1);
 }
+
+.card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 20px rgba(35, 34, 48, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(35, 34, 48, 0.12);
+}
+
+.queue-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(35, 34, 48, 0.05);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.queue-card:hover {
+  background-color: #f9fafb;
+  transform: translateY(-1px);
+}
