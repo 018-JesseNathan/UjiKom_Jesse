@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { LogOut, RefreshCw, Plus } from 'lucide-react';
 
 export default function PatientDashboard() {
-    const { user, logout } = useAuth();
+    const user = {
+        id: 99,
+        name: 'Jesse Nathan Rickum'
+      };
+    
+      const logout = () => {
+        alert('Logout clicked');
+      };
 
   // dummy data poliklinik
   const polyclinics = [
@@ -61,9 +68,10 @@ export default function PatientDashboard() {
             <h1 className="text-2xl font-bold text-[#232230]">Dashboard Pasien</h1>
             <p className="text-sm text-[#64748b]">Selamat datang, {user.name}</p>
           </div>
-          <button className="btn-secondary flex items-center gap-2">
-            <LogOut size={18} />
-            Keluar
+          <button
+  onClick={logout}
+  className="btn-secondary flex items-center gap-2"
+>
           </button>
         </div>
       </header>
