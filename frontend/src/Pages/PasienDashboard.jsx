@@ -2,22 +2,34 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogOut, RefreshCw, Plus } from 'lucide-react';
 import "../App.css"
 import { useNavigate } from "react-router-dom";
+import { polyclinicAPI } from '../services/api';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [polyclinics, setPolyclinics] = useState([]);
+  const [polyclinicLoading, setPolyclinicLoading] = useState(true);
   
   // Use ref to track if this is the initial mount
   const isInitialMount = useRef(true);
-  
-  const polyclinics = [
-    { id: 1, name: 'Poliklinik Umum', prefix: 'A', loket: 1, description: 'Pelayanan kesehatan umum', schedule: 'Senin - Jumat, 08:00 - 16:00' },
-    { id: 2, name: 'Poliklinik Gigi', prefix: 'B', loket: 2, description: 'Pelayanan kesehatan gigi', schedule: 'Senin - Jumat, 09:00 - 15:00' },
-    { id: 3, name: 'Poliklinik Anak', prefix: 'C', loket: 3, description: 'Pelayanan kesehatan bayi dan anak', schedule: 'Senin - Jumat, 08:00 - 14:00' },
-    { id: 4, name: 'Poliklinik Mata', prefix: 'D', loket: 4, description: 'Pelayanan kesehatan mata', schedule: 'Senin - Jumat, 09:00 - 16:00' },
-    { id: 5, name: 'Poliklinik Kandungan', prefix: 'E', loket: 5, description: 'Pelayanan kesehatan ibu hamil', schedule: 'Senin - Jumat, 08:00 - 15:00' }
-  ];
+
+  // Load polyclinics from backend
+  useEffect(() => {
+    const loadPolyclinics = async () => {
+      try {
+        const response = await polyclinicAPI.getAll();
+        if (response.data.success) {
+          setPolyclinics(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error loading polyclinics:', error);
+      } finally {
+        setPolyclinicLoading(false);
+      }
+    };
+    loadPolyclinics();
+  }, []);
 
   // Track queue count per poliklinik - load from localStorage
   const [queueCounters, setQueueCounters] = useState(() => {
