@@ -245,7 +245,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4 text-sm text-[#64748b]">{poly.description}</td>
                       <td className="py-3 px-4 text-sm text-[#64748b]">{poly.schedule}</td>
                       <td className="py-3 px-4 text-center">{poly.prefix}</td>
-                      <td className="py-3 px-4 text-center">{poly.loket}</td>
+                      <td className="py-3 px-4 text-ce">{poly.loket}</td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button 

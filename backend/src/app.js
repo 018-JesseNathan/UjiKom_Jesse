@@ -20,5 +20,4 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Terjadi kesalahan pada server!' })
 })
 
-export default app
 

@@ -1,0 +1,13 @@
+-- CREATE TABLE IF NOT EXISTS polyclinics (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     code VARCHAR(50) NOT NULL UNIQUE,
+--     name VARCHAR(100) NOT NULL,
+--     description TEXT,
+--     schedule VARCHAR(255),
+--     prefix VARCHAR(10) NOT NULL,
+--     loket INT NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+-- );
+
+
