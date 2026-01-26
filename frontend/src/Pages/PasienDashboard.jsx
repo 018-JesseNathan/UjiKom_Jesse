@@ -2,33 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { LogOut, RefreshCw, Plus } from 'lucide-react';
 import "../App.css"
 import { useNavigate } from "react-router-dom";
+import { polyclinicAPI } from '../services/api';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [polyclinics, setPolyclinics] = useState([]);
+  const [polyclinicLoading, setPolyclinicLoading] = useState(true);
   
   // Use ref to track if this is the initial mount
   const isInitialMount = useRef(true);
   
-  const polyclinics = [
-    { id: 1, name: 'Poliklinik Umum', prefix: 'A', loket: 1, description: 'Pelayanan kesehatan umum', schedule: 'Senin - Jumat, 08:00 - 16:00' },
-    { id: 2, name: 'Poliklinik Gigi', prefix: 'B', loket: 2, description: 'Pelayanan kesehatan gigi', schedule: 'Senin - Jumat, 09:00 - 15:00' },
-    { id: 3, name: 'Poliklinik Anak', prefix: 'C', loket: 3, description: 'Pelayanan kesehatan bayi dan anak', schedule: 'Senin - Jumat, 08:00 - 14:00' },
-    { id: 4, name: 'Poliklinik Mata', prefix: 'D', loket: 4, description: 'Pelayanan kesehatan mata', schedule: 'Senin - Jumat, 09:00 - 16:00' },
-    { id: 5, name: 'Poliklinik Kandungan', prefix: 'E', loket: 5, description: 'Pelayanan kesehatan ibu hamil', schedule: 'Senin - Jumat, 08:00 - 15:00' }
-  ];
-
   // Track queue count per poliklinik - load from localStorage
   const [queueCounters, setQueueCounters] = useState(() => {
     const savedCounters = localStorage.getItem('queueCounters');
-    return savedCounters ? JSON.parse(savedCounters) : {
-      1: 1, // A
-      2: 1, // B
-      3: 1, // C
-      4: 1, // D
-      5: 1  // E
-    };
+    return savedCounters ? JSON.parse(savedCounters) : {};
   });
 
   // Load queues from localStorage on initial render
@@ -56,6 +45,25 @@ export default function PatientDashboard() {
   });
   const [selectedPolyclinic, setSelectedPolyclinic] = useState(1);
   const [queueLoading, setQueueLoading] = useState(false);
+
+  // Fetch polyclinics from backend
+  useEffect(() => {
+    const fetchPolyclinics = async () => {
+      try {
+        const response = await polyclinicAPI.getAll();
+        if (response.data.success && response.data.data.length > 0) {
+          setPolyclinics(response.data.data);
+          setSelectedPolyclinic(response.data.data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching polyclinics:', error);
+      } finally {
+        setPolyclinicLoading(false);
+      }
+    };
+    
+    fetchPolyclinics();
+  }, []);
 
   // Save myQueue to localStorage whenever it changes
   useEffect(() => {
@@ -93,9 +101,7 @@ export default function PatientDashboard() {
         }
       }
       if (e.key === 'queueCounters') {
-        const newCounters = e.newValue ? JSON.parse(e.newValue) : {
-          1: 1, 2: 1, 3: 1, 4: 1, 5: 1
-        };
+        const newCounters = e.newValue ? JSON.parse(e.newValue) : {};
         setQueueCounters(newCounters);
       }
     };
@@ -147,10 +153,15 @@ export default function PatientDashboard() {
   };
 
   const handleCreateQueue = () => {
+    if (polyclinics.length === 0) {
+      alert('Tidak ada poliklinik tersedia');
+      return;
+    }
+    
     setQueueLoading(true);
     setTimeout(() => {
       const polyclinicData = polyclinics.find(p => p.id === selectedPolyclinic);
-      const currentCounter = queueCounters[selectedPolyclinic];
+      const currentCounter = queueCounters[selectedPolyclinic] || 1;
       const queueNumber = `${polyclinicData.prefix}${String(currentCounter).padStart(3, '0')}`;
       
       const newQueue = {
@@ -199,7 +210,7 @@ export default function PatientDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {loading ? (
+        {loading || polyclinicLoading ? (
           <div className="flex items-center justify-center py-20">
             <p className="text-[#64748b]">Memuat data...</p>
           </div>
@@ -215,10 +226,15 @@ export default function PatientDashboard() {
                   value={selectedPolyclinic}
                   onChange={(e) => setSelectedPolyclinic(Number(e.target.value))}
                   className="input-field mb-4"
+                  disabled={polyclinics.length === 0}
                 >
-                  {polyclinics.map(poly => (
-                    <option key={poly.id} value={poly.id}>{poly.name}</option>
-                  ))}
+                  {polyclinics.length === 0 ? (
+                    <option value="">Tidak ada poliklinik</option>
+                  ) : (
+                    polyclinics.map(poly => (
+                      <option key={poly.id} value={poly.id}>{poly.name}</option>
+                    ))
+                  )}
                 </select>
 
                 {selectedPolyclinicData && (
@@ -230,12 +246,12 @@ export default function PatientDashboard() {
 
                 <button
                   onClick={handleCreateQueue}
-                  disabled={myQueue || queueLoading}
+                  disabled={myQueue || queueLoading || polyclinics.length === 0}
                   className="w-full btn-primary flex items-center justify-center gap-2"
                 >
-                  {queueLoading ? 'Memproses...' : myQueue ? 'Anda Sudah Terdaftar' : (
+                  {queueLoading ? 'Memproses...' : myQueue ? 'Anda Sudah Terdaftar' : (polyclinics.length === 0 ? 'Tidak Ada Poliklinik' : (
                     <><Plus size={18} /> Ambil Nomor Antrian</>
-                  )}
+                  ))}
                 </button>
               </div>
 
@@ -256,26 +272,30 @@ export default function PatientDashboard() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {queues.map((queue) => (
-                    <div key={queue.id} className={`queue-card p-4 ${queue.patient_id === user.id ? 'border-l-4 border-[#10b981]' : ''}`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-3xl font-bold text-[#f5470d]">{queue.queue_number}</div>
-                          <p className="font-medium text-[#232230]">{queue.patient_name}</p>
+                {queues.length === 0 ? (
+                  <p className="text-center text-[#64748b] py-6">Belum ada antrian</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {queues.map((queue) => (
+                      <div key={queue.id} className={`queue-card p-4 ${queue.patient_id === user.id ? 'border-l-4 border-[#10b981]' : ''}`}>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-3xl font-bold text-[#f5470d]">{queue.queue_number}</div>
+                            <p className="font-medium text-[#232230]">{queue.patient_name}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-block px-2 py-1 bg-[#e2e8f0] text-[#64748b] text-xs rounded">
+                              Loket {queue.loket}
+                            </span>
+                            <p className="text-xs text-[#64748b] mt-1">{queue.polyclinic_name}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="inline-block px-2 py-1 bg-[#e2e8f0] text-[#64748b] text-xs rounded">
-                            Loket {queue.loket}
-                          </span>
-                          <p className="text-xs text-[#64748b] mt-1">{queue.polyclinic_name}</p>
-                        </div>
+                        <p className="text-xs text-[#64748b] uppercase tracking-wider mt-2">{queue.status}</p>
+                        {queue.patient_id === user.id && <p className="text-xs text-[#10b981] mt-1">Anda</p>}
                       </div>
-                      <p className="text-xs text-[#64748b] uppercase tracking-wider mt-2">{queue.status}</p>
-                      {queue.patient_id === user.id && <p className="text-xs text-[#10b981] mt-1">Anda</p>}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -284,4 +304,3 @@ export default function PatientDashboard() {
     </div>
   );
 }
-

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./Pages/Login.jsx";
 import Register from "./Pages/Register.jsx";
 import PasienDashboard from "./Pages/pasienDashboard.jsx";
-import AdminDashboard from "./Pages/adminDashboard.jsx";
+import AdminDashboard from "./Pages/AdminDashboard.jsx";
 
 function App() {
   return (
