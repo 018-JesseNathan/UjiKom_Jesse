@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LogOut, RefreshCw, Plus } from 'lucide-react';
+import { LogOut, Plus } from 'lucide-react';
 import "../App.css"
 import { useNavigate } from "react-router-dom";
-import { polyclinicAPI } from '../services/api';
+import { polyclinicAPI } from '../../../backend/src/services/api';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -47,23 +47,26 @@ export default function PatientDashboard() {
   const [queueLoading, setQueueLoading] = useState(false);
 
   // Fetch polyclinics from backend
-  useEffect(() => {
-    const fetchPolyclinics = async () => {
-      try {
-        const response = await polyclinicAPI.getAll();
-        if (response.data.success && response.data.data.length > 0) {
-          setPolyclinics(response.data.data);
+  const fetchPolyclinics = async () => {
+    try {
+      const response = await polyclinicAPI.getAll();
+      if (response.data.success && response.data.data.length > 0) {
+        setPolyclinics(response.data.data);
+        // Only set selectedPolyclinic if it's not already set
+        if (!selectedPolyclinic) {
           setSelectedPolyclinic(response.data.data[0].id);
         }
-      } catch (error) {
-        console.error('Error fetching polyclinics:', error);
-      } finally {
-        setPolyclinicLoading(false);
       }
-    };
-    
+    } catch (error) {
+      console.error('Error fetching polyclinics:', error);
+    } finally {
+      setPolyclinicLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPolyclinics();
-  }, []);
+  }, []); // Empty dependency - only fetch on mount
 
   // Save myQueue to localStorage whenever it changes
   useEffect(() => {
@@ -265,11 +268,8 @@ export default function PatientDashboard() {
 
             <div className="lg:col-span-2">
               <div className="card">
-                <div className="flex justify-between items-center mb-6">
+                <div className="mb-6">
                   <h2 className="text-2xl font-bold text-[#232230]">Daftar Antrian</h2>
-                  <button onClick={() => window.location.reload()} className="btn-secondary flex items-center gap-2">
-                    <RefreshCw size={16} /> Refresh
-                  </button>
                 </div>
 
                 {queues.length === 0 ? (

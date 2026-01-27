@@ -11,6 +11,8 @@ export const getAllPolyclinics = async (req, res) => {
         res.json({ success: true, data: polyclinics })
     } catch (error) {
         console.error('Error getAllPolyclinics:', error)
+        console.error('Error code:', error.code)
+        console.error('SQL state:', error.sqlState)
         res.status(500).json({ 
             success: false, 
             message: 'Gagal mengambil data poliklinik: ' + error.message,
@@ -23,6 +25,15 @@ export const getAllPolyclinics = async (req, res) => {
 export const getPolyclinicById = async (req, res) => {
     try {
         const { id } = req.params
+        console.log('Fetching polyclinic by ID:', id)
+        
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'ID poliklinik tidak valid!' 
+            })
+        }
+        
         const [polyclinics] = await db.query(
             'SELECT * FROM polyclinics WHERE id = ?',
             [id]
@@ -50,41 +61,59 @@ export const createPolyclinic = async (req, res) => {
     try {
         const { code, name, description, schedule, prefix, loket } = req.body
 
-        console.log('Creating new polyclinic:', req.body)
+        console.log('Creating new polyclinic with data:', req.body)
+        console.log('Received data types:', { 
+            code: typeof code, 
+            name: typeof name, 
+            prefix: typeof prefix, 
+            loket: typeof loket 
+        })
 
+        // Validate required fields
         if (!code || !name || !prefix || !loket) {
+            console.log('Validation failed: missing required fields')
             return res.status(400).json({ 
                 success: false, 
-                message: 'Kode, Nama, Prefix, dan Loket wajib diisi!' 
+                message: 'Kode, Nama, Prefix, dan Loket wajib diisi!',
+                received: { code, name, prefix, loket }
             })
         }
 
         // Check if code already exists
+        console.log('Checking for existing code:', code)
         const [existing] = await db.query(
             'SELECT * FROM polyclinics WHERE code = ?',
             [code]
         )
 
         if (existing.length > 0) {
+            console.log('Code already exists:', code)
             return res.status(400).json({ 
                 success: false, 
                 message: 'Kode poliklinik sudah digunakan!' 
             })
         }
 
+        // Convert loket to integer
+        const loketInt = parseInt(loket)
+        console.log('Inserting with loket as integer:', loketInt)
+
+        // Insert new polyclinic
         const [result] = await db.query(
             `INSERT INTO polyclinics (code, name, description, schedule, prefix, loket) 
              VALUES (?, ?, ?, ?, ?, ?)`,
-            [code, name, description || '', schedule || '', prefix, loket]
+            [code, name, description || '', schedule || '', prefix, loketInt]
         )
 
-        console.log('Polyclinic created with ID:', result.insertId)
+        console.log('Polyclinic created successfully with ID:', result.insertId)
 
         const newId = result.insertId
         const [newPolyclinic] = await db.query(
             'SELECT * FROM polyclinics WHERE id = ?',
             [newId]
         )
+
+        console.log('New polyclinic fetched:', newPolyclinic[0])
 
         res.status(201).json({
             success: true,
@@ -94,10 +123,14 @@ export const createPolyclinic = async (req, res) => {
 
     } catch (error) {
         console.error('Error createPolyclinic:', error)
+        console.error('Error code:', error.code)
+        console.error('SQL state:', error.sqlState)
+        console.error('SQL message:', error.sqlMessage)
         res.status(500).json({ 
             success: false, 
             message: 'Gagal menambahkan poliklinik: ' + (error.sqlMessage || error.message),
-            error: error.sqlMessage || error.message
+            error: error.sqlMessage || error.message,
+            code: error.code
         })
     }
 }
@@ -161,7 +194,7 @@ export const updatePolyclinic = async (req, res) => {
     } catch (error) {
         console.error('Error updatePolyclinic:', error)
         res.status(500).json({ 
-            success: false,     
+            success: false, 
             message: 'Terjadi kesalahan pada server!' 
         })
     }

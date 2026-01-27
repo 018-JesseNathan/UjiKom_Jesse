@@ -1,5 +1,5 @@
-import app from './app.js'
-import db from './config/db.js'
+import { default as app } from './app.js'
+import { default as db } from './config/db.js'
 
 const PORT = 3000
 
@@ -25,30 +25,30 @@ const initializeDatabase = async () => {
             )
         `)
         console.log('Polyclinics table ready')
-        
-        // Check if table has data
-        const [polyclinics] = await db.query('SELECT COUNT(*) as count FROM polyclinics')
-        if (polyclinics[0].count === 0) {
-            console.log('Adding sample polyclinic data...')
-            await db.query(`
-                INSERT INTO polyclinics (code, name, description, schedule, prefix, loket) VALUES
-                ('POL-001', 'Poliklinik Umum', 'Pelayanan kesehatan umum', 'Senin - Jumat, 08:00 - 16:00', 'A', 1),
-                ('POL-002', 'Poliklinik Gigi', 'Pelayanan kesehatan gigi', 'Senin - Kamis, 09:00 - 14:00', 'B', 2),
-                ('POL-003', 'Poliklinik Anak', 'Pelayanan kesehatan bayi dan anak', 'Senin - Jumat, 08:00 - 14:00', 'C', 3)
-            `)
-            console.log('Sample data added')
-        }
+        return true
         
     } catch (error) {
         console.error('Database initialization error:', error.message)
         console.error('Make sure MySQL is running and database "db_pasien" exists')
+        console.error('Error code:', error.code)
+        console.error('SQL state:', error.sqlState)
+        return false
     }
 }
 
 // Initialize database and start server
-initializeDatabase().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server backend berjalan di http://localhost:${PORT}`)
-    })
-})
+const startServer = async () => {
+    const dbReady = await initializeDatabase()
+    
+    if (dbReady) {
+        app.listen(PORT, () => {
+            console.log(`Server backend berjalan di http://localhost:${PORT}`)
+        })
+    } else {
+        console.error('Failed to initialize database. Server not starting.')
+        process.exit(1)
+    }
+}
+
+startServer()
 

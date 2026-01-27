@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Plus, Edit2, Trash2, RefreshCw, AlertCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { polyclinicAPI } from '../services/api';
+import { polyclinicAPI } from '../../../backend/src/services/api';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -442,4 +442,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
