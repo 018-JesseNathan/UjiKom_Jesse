@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Plus, Edit2, Trash2, RefreshCw, AlertCircle, X } from 'lucide-react';
+import { LogOut, Plus, RefreshCw, AlertCircle, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { polyclinicAPI } from '../../../backend/src/services/api';
+import PolyclinicTable from '../Components/PolyclinicTable';
+import PolyclinicModal from '../Components/PolyclinicModal';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ export default function AdminDashboard() {
   
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+  const [modalMode, setModalMode] = useState('add');  
   const [selectedPolyclinic, setSelectedPolyclinic] = useState(null);
   const [formData, setFormData] = useState({
     code: '',
@@ -79,7 +81,7 @@ export default function AdminDashboard() {
   // Get queue counter for a poliklinik
   const getQueueCount = (polyclinicId) => {
     return getQueByPolyclinic(polyclinicId).length;
-  };
+  };  
   
   // Reset all queues
   const handleResetAll = () => {
@@ -195,10 +197,12 @@ export default function AdminDashboard() {
             <h1 className="text-2xl font-bold text-[#232230]">Dashboard Admin</h1>
             <p className="text-sm text-[#64748b]">Mode Tampilan - Sinkron dengan PatientDashboard</p>
           </div>
-          <button onClick={() => navigate('/')} className="btn-secondary flex items-center gap-2">
-            <LogOut size={18} />
-            Keluar
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => navigate('/')} className="btn-secondary flex items-center gap-2">
+              <LogOut size={18} />
+              Keluar
+            </button>
+          </div>
         </div>
       </header>
 
@@ -219,55 +223,12 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="card overflow-x-auto">
-            {polyclinicLoading ? (
-              <p className="text-center text-[#64748b] py-6">Memuat data...</p>
-            ) : polyclinics.length === 0 ? (
-              <p className="text-center text-[#64748b] py-6">Belum ada poliklinik</p>
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 text-xs uppercase">Kode</th>
-                    <th className="text-left py-3 px-4 text-xs uppercase">Nama</th>
-                    <th className="text-left py-3 px-4 text-xs uppercase">Deskripsi</th>
-                    <th className="text-left py-3 px-4 text-xs uppercase">Jadwal</th>
-                    <th className="text-center py-3 px-4 text-xs uppercase">Prefix</th>
-                    <th className="text-center py-3 px-4 text-xs uppercase">Loket</th>
-                    <th className="text-right py-3 px-4 text-xs uppercase">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {polyclinics.map((poly) => (
-                    <tr key={poly.id} className="border-b hover:bg-[#f1f5f9]">
-                      <td className="py-3 px-4 font-mono">{poly.code}</td>
-                      <td className="py-3 px-4 font-medium">{poly.name}</td>
-                      <td className="py-3 px-4 text-sm text-[#64748b]">{poly.description}</td>
-                      <td className="py-3 px-4 text-sm text-[#64748b]">{poly.schedule}</td>
-                      <td className="py-3 px-4 text-center">{poly.prefix}</td>
-                      <td className="py-3 px-4 text-ce">{poly.loket}</td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button 
-                            onClick={() => handleEditClick(poly)}
-                            className="p-2 text-[#64748b] hover:text-[#f5470d]"
-                          >
-                            <Edit2 size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(poly.id)}
-                            className="p-2 text-[#64748b] hover:text-[#ef4444]"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          <PolyclinicTable
+            polyclinics={polyclinics}
+            polyclinicLoading={polyclinicLoading}
+            onEdit={handleEditClick}
+            onDelete={handleDelete}
+          />
         </section>
 
         {/* Antrian */}
@@ -319,126 +280,16 @@ export default function AdminDashboard() {
       </main>
       
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-md mx-4">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h3 className="text-xl font-bold">
-                {modalMode === 'add' ? 'Tambah Poliklinik' : 'Edit Poliklinik'}
-              </h3>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-[#f1f5f9] rounded">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-4 space-y-4">
-              {errorMessage && (
-                <div className="p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded">
-                  {errorMessage}
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Kode *</label>
-                <input
-                  type="text"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                  placeholder="Contoh: POL-001"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Nama *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  required
-                  placeholder="Contoh: Poliklinik Umum"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Deskripsi</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  rows="2"
-                  placeholder="Deskripsi poliklinik"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-1">Jadwal</label>
-                <input
-                  type="text"
-                  name="schedule"
-                  value={formData.schedule}
-                  onChange={handleInputChange}
-                  className="input-field"
-                  placeholder="Contoh: Senin - Jumat, 08:00 - 16:00"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Prefix *</label>
-                  <input
-                    type="text"
-                    name="prefix"
-                    value={formData.prefix}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    required
-                    maxLength="5"
-                    placeholder="Contoh: A"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">Loket *</label>
-                  <input
-                    type="number"
-                    name="loket"
-                    value={formData.loket}
-                    onChange={handleInputChange}
-                    className="input-field"
-                    required
-                    min="1"
-                    placeholder="Contoh: 1"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 btn-secondary"
-                  disabled={submitLoading}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 btn-primary"
-                  disabled={submitLoading}
-                >
-                  {submitLoading ? 'Memproses...' : (modalMode === 'add' ? 'Tambah' : 'Simpan')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <PolyclinicModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        mode={modalMode}
+        formData={formData}
+        onInputChange={handleInputChange}
+        loading={submitLoading}
+        error={errorMessage}
+      />
     </div>
   );
 }
